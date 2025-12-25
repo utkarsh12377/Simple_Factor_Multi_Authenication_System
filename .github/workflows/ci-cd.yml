@@ -1,0 +1,67 @@
+name: Simple CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Use Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ~/.cache
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install server deps
+        run: |
+          cd src/server
+          npm ci
+
+      - name: Run server tests (unit)
+        working-directory: src/server
+        run: |
+          npm test || (echo "Server tests failed" && exit 1)
+
+      - name: Install client deps
+        run: |
+          cd src/client
+          npm ci
+
+      - name: Run client tests
+        working-directory: src/client
+        env:
+          CI: true
+        run: |
+          npm test -- --watchAll=false || (echo "Client tests failed" && exit 1)
+
+      - name: Build client
+        run: |
+          cd src/client
+          npm run build
+
+      - name: Package deployment
+        run: |
+          ts=$(date +%Y%m%d%H%M%S)
+          mkdir -p deployment
+          cp -r src deployment/src
+          cp -r src/client/build deployment/client-build || true
+          cp README.md deployment/ || true
+          zip -r deployment-package-$ts.zip deployment
+
+      - name: Upload deployment package
+        uses: actions/upload-artifact@v3
+        with:
+          name: deployment-package
+          path: deployment-package-*.zip
