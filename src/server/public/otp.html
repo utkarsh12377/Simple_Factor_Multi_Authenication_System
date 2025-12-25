@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Enter OTP</title>
+</head>
+<body>
+  <h3>Enter OTP sent to your email</h3>
+  <input id="email" placeholder="email" /><br/><br/>
+  <input id="otp" placeholder="6-digit OTP" maxlength="6" /><br/><br/>
+  <button id="verify">Verify OTP</button>
+  <button id="resend">Resend OTP</button>
+
+  <div id="msg"></div>
+
+<script>
+const base = '';
+
+document.getElementById('verify').addEventListener('click', async () => {
+  const email = document.getElementById('email').value;
+  const otp = document.getElementById('otp').value;
+  const res = await fetch(base + '/auth/verify-otp', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ email, otp })
+  });
+  const j = await res.json();
+  document.getElementById('msg').innerText = JSON.stringify(j);
+});
+
+document.getElementById('resend').addEventListener('click', async () => {
+  const email = document.getElementById('email').value;
+  const res = await fetch(base + '/auth/request-otp', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ email })
+  });
+  const j = await res.json();
+  document.getElementById('msg').innerText = JSON.stringify(j);
+});
+</script>
+</body>
+</html>
